@@ -24,35 +24,29 @@ int RandomNumber(int from, int to)
     return rand() % (to - from + 1) + from;
 }
 
-enum enWinState {Win=1,Draw=2,Lose=3};
+enum enWinner {Player=1,Computer=2,Draw=3};
 
 enum enRockPaperScissors {Rock=1,Paper=2,Scissors=3};
 
 struct stGameResults
 {
+    int gameRounds = 0;
     int playerWins = 0;
     int computerWins = 0;
     int draws = 0;
-    int playerLosses = 0;
-    int computerLosses = 0;
-    int rounds = 0;
+    enWinner gameWinner;
+    string winnerName;
 };
 
-string Tabs(short tabsNum)
+struct stRoundInfo
 {
-    string tabs;
-    for (int i = 1; i <= tabsNum; i++)
-    {
-        tabs += "\t";
-    }
-    return tabs;
-}
+    int gameRound = 0;
+    enRockPaperScissors playerChoice;
+    enRockPaperScissors computerChoice;
+    enWinner roundWinner;
+    string winnerName;
+};
 
-void CleanScreen()
-{
-    system("cls");
-    system("color 0F");
-}
 
 int ReadRoundsNum()
 {
@@ -71,60 +65,53 @@ enRockPaperScissors GetCompChoice()
     return (enRockPaperScissors)RandomNumber(1,3);
 }
 
-enWinState CheckWin(enRockPaperScissors playerChoice, enRockPaperScissors compChoice)
+enWinner CheckWinner(stRoundInfo info)
 {
-    switch (playerChoice)
+
+    if (info.playerChoice == info.computerChoice)
+        return enWinner::Draw;
+
+    switch (info.playerChoice)
     {
+
     case enRockPaperScissors::Paper:
-        if (compChoice == enRockPaperScissors::Paper)
-            return enWinState::Draw;
-        if (compChoice == enRockPaperScissors::Rock)
-            return enWinState::Win;
-        return enWinState::Lose;
+        if (info.computerChoice == enRockPaperScissors::Rock)
+            return enWinner::Player;
+        
     case enRockPaperScissors::Rock:
-        if (compChoice == enRockPaperScissors::Paper)
-            return enWinState::Lose;
-        if (compChoice == enRockPaperScissors::Rock)
-            return enWinState::Draw;
-        return enWinState::Win;
+        if (info.computerChoice == enRockPaperScissors::Scissors)
+            return enWinner::Player;
+
     case enRockPaperScissors::Scissors:
-        if (compChoice == enRockPaperScissors::Paper)
-            return enWinState::Win;
-        if (compChoice == enRockPaperScissors::Rock)
-            return enWinState::Lose;
-        return enWinState::Draw;
+        if (info.computerChoice == enRockPaperScissors::Paper)
+            return enWinner::Player;
+
     }
+    return enWinner::Computer;
 }
 
-string GetChoice(enRockPaperScissors choice)
-{
-    if (choice == enRockPaperScissors::Paper)
-        return "Paper";
-    else if (choice == enRockPaperScissors::Rock)
-        return "Rock";
-    else
-        return "Scissors";
-}
-
-string GetRoundWinner(enWinState playerWins)
-{
-    if (playerWins == enWinState::Win)
-        return "Player1";
-    else if (playerWins == enWinState::Draw)
-        return "No Winner";
-    else
-        return "Computer";
-}
-
-string GetGameWinner(stGameResults results)
+enWinner GetGameWinner(stGameResults results)
 {
     if (results.computerWins > results.playerWins)
-        return "Computer";
-    else if (results.computerWins == results.playerWins)
-        return "No Winner";
+        return enWinner::Computer;
+    else if (results.playerWins > results.computerWins)
+        return enWinner::Player;
     else
-        return "Player1";
-        
+        return enWinner::Draw;
+}
+
+string GetChoiceName(enRockPaperScissors choice)
+{
+
+    string choices[3] = { "Rock","Paper","Scissors" };
+
+    return choices[choice - 1];
+}
+
+string GetWinnerName(enWinner winner)
+{
+    string winners[3] = {"Player","Computer","No Winner"};
+    return winners[winner - 1];
 }
 
 string ReadChoice(string message)
@@ -152,31 +139,30 @@ bool isPlayingAgain(string choice)
     
 }
 
-void UpdateResult(stGameResults& result, enWinState win)
+string Tabs(short tabsNum)
 {
-    if (win == enWinState::Win)
+    string tabs;
+    for (int i = 1; i <= tabsNum; i++)
     {
-        result.playerWins++;
-        result.computerLosses++;
+        tabs += "\t";
     }
-    else if (win == enWinState::Draw)
-    {
-        result.draws++;
-    }
-    else
-    {
-        result.computerWins++;
-        result.playerLosses++;
-    }
+    return tabs;
 }
 
-void ChangeScreen(enWinState win)
+void CleanScreen()
 {
-    if (win == enWinState::Win)
+    system("cls");
+    system("color 0F");
+}
+
+
+void ChangeScreen(enWinner win)
+{
+    if (win == enWinner::Player)
     {
         system("color 2F");
     }
-    else if (win == enWinState::Draw)
+    else if (win == enWinner::Draw)
     {
         system("color 6F");
     }
@@ -187,28 +173,61 @@ void ChangeScreen(enWinState win)
     }
 }
 
-void PrintRound(enRockPaperScissors playerChoice, enRockPaperScissors compChoice, enWinState winner,int roundCounter)
+void PrintRound(stRoundInfo info,short rounds)
 {
     cout << "\n\n";
-    cout << "-----------------------------Round [" << roundCounter << "]-------------------------------------\n\n";
-    cout << "Player 1 Choice : " << GetChoice(playerChoice) << endl;
-    cout << "Computer Choice : " << GetChoice(compChoice) << endl;
-    cout << "Round Winner : " << GetRoundWinner(winner) << endl;
+    cout << "-----------------------------Round [" << rounds << "]-------------------------------------\n\n";
+    cout << "Player 1 Choice : " << GetChoiceName(info.playerChoice) << endl;
+    cout << "Computer Choice : " << GetChoiceName(info.computerChoice) << endl;
+    cout << "Round Winner : " << GetWinnerName(info.roundWinner) << endl;
     cout << "---------------------------------------------------------------------------\n\n";
+}
+
+void PrintGameOver()
+{
+    cout << Tabs(3) << "------------------------------------------------------------------------------\n\n";
+    cout << Tabs(3) << "                       ***G a m e  O v e r***\n\n";
+    cout << Tabs(3) << "------------------------------------------------------------------------------\n\n";
 }
 
 void PrintGameResult(stGameResults result)
 {
-    cout << Tabs(3) << "------------------------------------------------------------------------------\n\n";
-    cout << Tabs(7) << "***G a m e  O v e r***\n\n";
-    cout << Tabs(3) << "------------------------------------------------------------------------------\n\n";
+    
     cout << Tabs(3) << "---------------------------------[ Game Results ]-----------------------------\n\n";
-    cout << Tabs(3) << "Game Rounds              :" << result.rounds << endl;
+    cout << Tabs(3) << "Game Rounds              :" << result.gameRounds << endl;
     cout << Tabs(3) << "Player1 Won Times        :" << result.playerWins << endl;
     cout << Tabs(3) << "Computer Won Times       :" << result.computerWins << endl;
     cout << Tabs(3) << "Draw Times               :" << result.draws << endl;
-    cout << Tabs(3) << "Game Winner              :" << GetGameWinner(result) << endl;
+    cout << Tabs(3) << "Game Winner              :" << GetWinnerName(result.gameWinner) << endl;
     cout << Tabs(3) << "------------------------------------------------------------------------------\n\n";
+}
+
+stGameResults PlayGame(short roundsNum)
+{
+    short playerWins=0, computerWins=0, draws=0;
+    stRoundInfo round;
+
+    for (short rounds = 1; rounds <= roundsNum; rounds++)
+    {
+        cout << "\nRound [" << rounds << "] begins : \n" << endl;
+
+        round.playerChoice = ReadPlayerChoice();
+        round.computerChoice = GetCompChoice();
+        round.roundWinner = CheckWinner(round);
+        round.winnerName = GetWinnerName(round.roundWinner);
+
+        PrintRound(round, rounds);
+        
+        if (round.roundWinner == enWinner::Player)
+            playerWins++;
+        else if (round.roundWinner == enWinner::Computer)
+            computerWins++;
+        else
+            draws++;
+    }
+
+    return { roundsNum,playerWins,computerWins,draws };
+
 }
 
 void TheGame()
@@ -216,33 +235,16 @@ void TheGame()
     bool isPlaying = true;
     while (isPlaying)
     {
-        int rounds = ReadRoundsNum();
-        int roundCounter = 1;
-        stGameResults results;
-        results.rounds = rounds;
-        do
-        {
+        
+        stGameResults game = PlayGame(ReadRoundsNum());
 
+        game.gameWinner = GetGameWinner(game);
 
-            cout << "\nRound [" << roundCounter << "] begins : \n" << endl;
+        ChangeScreen(game.gameWinner);
 
+        PrintGameOver();
 
-            enRockPaperScissors playerChoice = ReadPlayerChoice();
-            enRockPaperScissors computerChoice = GetCompChoice();
-
-            enWinState checkPlayerWin = CheckWin(playerChoice, computerChoice);
-
-            ChangeScreen(checkPlayerWin);
-            UpdateResult(results, checkPlayerWin);
-
-            PrintRound(playerChoice, computerChoice, checkPlayerWin, roundCounter);
-
-            roundCounter++;
-
-            rounds--;
-        } while (rounds != 0);
-
-        PrintGameResult(results);
+        PrintGameResult(game);
         
         if (isPlayingAgain(ReadChoice("Do you want to play again ? Y/N : ")) == false)
             break;
